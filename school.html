@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>中小学学区管理系统设计与实现详解</title>
+  <link rel="stylesheet" href="https://unpkg.com/modern-css-reset/dist/reset.min.css">
+  <style>
+    :root{
+      --bg:#f6f8fb; --card:#ffffff; --primary:#0f62fe; --muted:#6b7280;
+      --accent:#06b6d4; --glass: rgba(255,255,255,0.6);
+      font-family: "Microsoft Yahei", "PingFang SC", "Noto Sans SC", Arial, sans-serif;
+    }
+    body{
+      background: linear-gradient(180deg,#f6f8fb 0%, #eef4ff 100%);
+      color:#111827; line-height:1.65; padding:28px;
+    }
+    .container{ max-width:1100px; margin:0 auto; }
+    header{ display:flex; gap:20px; align-items:center; margin-bottom:18px;}
+    header .logo{
+      width:56px; height:56px; border-radius:12px; background:linear-gradient(135deg,var(--primary),var(--accent));
+      display:flex; align-items:center; justify-content:center; color:white; font-weight:700; font-size:20px;
+      box-shadow: 0 6px 18px rgba(16,24,40,0.06);
+    }
+    h1{ font-size:22px; margin:0; }
+    .meta{ color:var(--muted); font-size:13px; margin-top:6px;}
+    nav{ display:flex; gap:8px; margin-top:18px; flex-wrap:wrap;}
+    .pill{ background:var(--card); border-radius:999px; padding:8px 12px; font-size:13px; color:var(--muted);
+      box-shadow: 0 4px 12px rgba(2,6,23,0.04); }
+    main{ margin-top:22px; display:grid; grid-template-columns: 1fr 340px; gap:20px; align-items:start;}
+    article{ background:var(--card); border-radius:12px; padding:22px; box-shadow: 0 10px 30px rgba(2,6,23,0.06);}
+    aside{ position:sticky; top:24px; height:max-content; background:linear-gradient(180deg,rgba(255,255,255,0.8),var(--glass)); border-radius:12px; padding:16px; box-shadow:0 8px 26px rgba(2,6,23,0.04);}
+    section h2{ font-size:18px; margin-top:4px; color:#0b2545;}
+    p.lead{ color:var(--muted); margin-top:8px; }
+    .card{ background:#fff; border-radius:10px; padding:12px; margin-top:12px; box-shadow:0 6px 18px rgba(2,6,23,0.03); }
+    .flow{ margin-top:14px; display:block; width:100%; overflow:auto; border-radius:8px; }
+    pre.html-code{ background:#0b1220; color:#d1fae5; padding:12px; border-radius:8px; font-size:12px; overflow:auto; max-height:300px;}
+    .map-preview{ height:300px; border-radius:8px; overflow:hidden; margin-top:12px; border:1px solid rgba(15,28,78,0.06);}
+    ul{ margin-left:18px; }
+    .big{ font-size:15px; }
+    footer{ margin-top:22px; color:var(--muted); font-size:13px; text-align:center;}
+    /* timeline */
+    .timeline{ margin-top:10px; }
+    .step{ display:flex; gap:12px; align-items:flex-start; margin-bottom:12px; }
+    .step .dot{ width:10px; height:10px; background:var(--primary); border-radius:50%; margin-top:6px; }
+    .step .desc{ background:#f8fafc; padding:10px; border-radius:8px; flex:1; box-shadow:inset 0 0 0 1px rgba(2,6,23,0.02);}
+    .cta{ margin-top:12px; display:flex; gap:8px; }
+    .btn{ background:var(--primary); color:white; padding:8px 12px; border-radius:8px; font-weight:600; cursor:pointer; border:none; }
+    .btn.ghost{ background:transparent; color:var(--primary); box-shadow: inset 0 0 0 1px rgba(15,98,254,0.12);}
+    code.inline{ background:#0f1724;color:#e6fffa;padding:2px 6px;border-radius:6px;font-size:12px; }
+    .note{ background:#fff7ed; padding:10px; border-radius:8px; border:1px solid #fff1e6; margin-top:12px; color:#92400e;}
+    /* responsive */
+    @media (max-width:980px){
+      main{ grid-template-columns: 1fr; }
+      aside{ position:static; }
+    }
+  </style>
+  <!-- Leaflet for map preview (requires internet) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="logo">学区</div>
+      <div>
+        <h1>中小学学区管理系统 — 设计与实现详解</h1>
+        <div class="meta">融合 GIS、遥感与 AI 的学区划分与管理平台 — 适用于教育主管部门与公众</div>
+      </div>
+    </header>
+
+    <nav>
+      <div class="pill">作者：地理信息科学 学生</div>
+      <div class="pill">用途：毕业设计 / 课程项目 / 原型</div>
+      <div class="pill">输出格式：HTML / PDF / PPT</div>
+    </nav>
+
+    <main>
+      <article>
+        <!-- Section 1 -->
+        <section id="overview">
+          <h2>1. 系统基本想法（系统定位、目标用户、主要功能、专业特色）</h2>
+          <p class="lead big">
+            本系统为“中小学学区管理系统（又称：义务教育学区动态管理平台）”，目的是将空间科学能力与现代 AI 相结合，为教育主管部门提供学区划定、调整与决策支持，同时向公众提供便捷的学区查询、入学指南与投诉渠道。系统兼顾管理端（Web 大屏、复杂操作）与公众端（移动端/小程序、简洁操作），突出遥感影像与空间分析能力。
+          </p>
+
+          <div class="card">
+            <strong>目标用户</strong>
+            <ul>
+              <li><strong>教育主管部门</strong>：负责学区规划、审核、发布与管理；需要批量处理与多部门对接功能。</li>
+              <li><strong>公众（家长/学生）</strong>：需要地址学区查询、入学政策、提交异议及进度追踪等便捷服务。</li>
+            </ul>
+            <div style="margin-top:8px">
+              <strong>核心功能概览：</strong>
+              <ul>
+                <li>学区地图编辑与版本管理；</li>
+                <li>AI 辅助的学区边界智能绘制与政策文本解析；</li>
+                <li>基于遥感影像的新建小区与建筑变化检测；</li>
+                <li>可达性与容量分析（生源密度、服务不平衡度量）；</li>
+                <li>公众查询、小程序推送与在线异议流程。</li>
+              </ul>
+            </div>
+
+            <div style="margin-top:10px;">
+              <strong>为什么该系统体现专业特色？</strong>
+              <p class="note">系统把 GIS 的空间分析（服务区、缓冲、最短路径、空间自相关等）、遥感的影像变化检测与 AI 的语义理解结合起来，既能做“学区的地图管理”，也能做“时空动态监测与智能决策”。</p>
+            </div>
+          </div>
+          <svg class="flow" viewBox="0 0 1000 160" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+            <defs><filter id="s" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="6" stdDeviation="12" flood-opacity="0.08" /></filter></defs>
+            <g font-family="Microsoft Yahei" font-size="13">
+              <rect x="28" y="24" rx="8" width="200" height="48" fill="#ffffff" stroke="#dbeafe" stroke-width="1.5" filter="url(#s)"/>
+              <text x="44" y="55" fill="#08366a">1. 地理信息与遥感数据</text>
+              <rect x="284" y="24" rx="8" width="200" height="48" fill="#ffffff" stroke="#dbeafe" stroke-width="1.5"/>
+              <text x="302" y="55" fill="#08366a">2. AI 解析与学区绘制</text>
+              <rect x="540" y="24" rx="8" width="200" height="48" fill="#ffffff" stroke="#dbeafe" stroke-width="1.5"/>
+              <text x="578" y="55" fill="#08366a">3. 管理端: 审批与版本控制</text>
+              <rect x="796" y="24" rx="8" width="160" height="48" fill="#ffffff" stroke="#dbeafe" stroke-width="1.5"/>
+              <text x="820" y="55" fill="#08366a">4. 公众端查询/异议</text>
+              <path d="M228 48 L276 48" stroke="#0f62fe" stroke-width="2" marker-end="url(#arrow)"/>
+              <path d="M484 48 L532 48" stroke="#0f62fe" stroke-width="2"/>
+              <path d="M740 48 L788 48" stroke="#0f62fe" stroke-width="2"/>
+            </g>
+          </svg>
+        </section>
+
+        <!-- Section 2 -->
+        <section id="questions" style="margin-top:18px;">
+          <h2>2. 产生的问题（逐条详尽回答）</h2>
+
+          <h3 style="margin-top:12px;">2.1 管理人员与普通民众的功能需求（详尽）</h3>
+          <p>
+            对于管理人员，系统必须提供专业的地图编辑与数据管理功能：支持多种 GIS 数据格式（Shapefile、GeoJSON、KML）、拓扑检查（检测自相交、重复边界）、批量导入/导出以及变更审核流程（起草—评审—公示—生效）。管理端需要可视化的容量分析模块，这个模块结合学校在校生数、班额标准与教师资源，评估学区内学校是否超载或闲置并给出建议。对接多部门数据（民政、住建、户籍）与权限管理是核心——不同层级的用户（市、区、街道）对数据的可见性与编辑权限不同，必须有严格的审计日志与回滚机制。同时，管理人员需要影像比对工具，能够快速切换不同时间的遥感/航片图层，用来识别新建住宅区、拆迁或土地用途变化，从而辅助学区调整。系统还要支持“模拟调整”功能：给出一个学区边界调整建议后，系统可以基于空间可达性、生源分布与学校容量做影响评估（例如哪些片区将增加或减少生源，是否产生新的超载点），并导出图表与文字分析报告以辅助决策。
+          </p>
+          <p>
+            对于公众（家长），核心诉求是“快捷与透明”。他们需要通过地址快速查询所属学区、包含的学校名单、招生政策与是否有摇号或限额。用户界面应当简洁，支持地址模糊匹配、楼栋/小区选择和地图落点查询；同时支持将查询结果一键保存、订阅学区变化通知。遇到判定争议（例如系统判定为学区外但家长认为应在内），应该提供在线异议功能，允许用户上传凭证（房产证、合同、照片），并能查看处理进度与历史记录。另有增值功能包括：通学路线规划（步行/公交/驾车）、通勤安全提示（是否需过主干道/高危路段提示）、以及 AI 问答机器人解答常见问题（材料清单、时间节点、摇号规则等）。公众端对手机适配要求高，且应该支持消息推送（小程序/短信/邮件），以便在学区调整或招生政策变动时及时通知订户。
+          </p>
+
+          <h3 style="margin-top:12px;">2.2 实现这些功能的技术难点（详尽）</h3>
+          <p>
+            首要技术难点是<span class="inline">空间数据处理</span>与一致性管理：学区边界需要严格的拓扑关系（无自相交、无重叠），并且来自多源的数据（住建、民政、影像识别）常常在坐标系、精度与语义上不一致。实现高效的拓扑检查与修复功能需要掌握 PostGIS、GEOS 等空间库的使用。其次，<strong>AI 自动绘制与文本解析</strong>是高难点：把“以××路为界、包含××小区”这样的自然语言表达，准确地映射到矢量要素（道路、楼盘边界）并生成闭合学区面，需要把 NLP（命名实体识别、关系抽取）与空间图形操作（缓冲、切割、合并）联合。遥感影像的变化检测也有挑战：高分辨率影像对计算资源要求高，需用语义分割或目标检测模型提取建筑轮廓或区块，并解决遮挡、季节性变化与影像配准问题。
+          </p>
+          <p>
+            性能和并发是第三大挑战：城市级学区查询、可达性分析与服务面生成（isochrone）都可能牵涉到大量路网计算和空间缓冲，需要合理的缓存策略、网格化预计算（例如把常用站点的可达面预先计算存储）和任务队列（Celery、RabbitMQ）来处理异步批量任务。数据隐私与安全同样关键，涉及居民地址和户籍数据必须做脱敏、加密存储与分级授权访问。最后，多部门数据标准不统一，数据清洗与实体匹配（例如把“某某小区”在住建数据与不动产数据中对应起来）需要设计一套健壮的数据融合与对齐流程。
+          </p>
+
+          <h3 style="margin-top:12px;">2.3 实现这些功能需要的数据与可行性判断（详尽）</h3>
+          <p>
+            <strong>必要数据</strong>包括：行政区划（省/市/区/街道）、道路网（含步行道与车辆道）、建筑与小区矢量、学校点位与其属性（招生规模、班额、教师数）、人口或户籍分布（年龄结构、儿童人数）、土地利用与遥感影像（用于变化检测）、公交与公共交通线路数据、历史学区边界版本与政策文本。对于公众查询功能，最小可用集是：行政区划 + 学校点位 + 学区边界（或至少学校与行政对应规则），这样就能实现地址到学区的基础查询。
+          </p>
+          <p>
+            <strong>增强功能所需数据</strong>：人口/户籍数据（用于生源预测）、不动产与租赁数据（用于居住证类判断）、高分辨率影像或无人机航片（用于新建区检测）、路网时间成本模型（不同路段的通行速度、公交车间隔）等。
+          </p>
+          <p>
+            <strong>如何判断能否做出来</strong>？按模块化方式评估：若你能获取基础地理数据与学校位置，那么“学区查询”和“展示”功能是低门槛可行的；如果同时能接入人口/户籍数据，则可以做容量与公平性分析；若你拥有影像数据并具备训练/使用遥感分割模型的能力，就能做自动化的新建区检测与学区更新预警；如果有政策文档且能做 NLP 解析，则 AI 智能绘图与文本解析成为可能。因此，核心判断是“数据可用性”与“计算资源/模型能力”。实践建议采用迭代开发：先实现查询与可视化，然后逐步接入 AI 与遥感模块。
+          </p>
+
+          <h3 style="margin-top:12px;">2.4 哪些功能最重要？如何体现专业特点（详尽）</h3>
+          <p>
+            在有限时间或资源下，建议首先完成以下核心功能：学区地图与边界管理、地址到学区的查询、版本化的审批流与公众申诉入口、以及基础的容量/超载警示。这些功能是系统的“核”，直接影响到管理效率与公众体验。专业特色体现在两个维度：一是<strong>空间分析能力</strong>，比如服务区分析（使用等时面/isochrone）、生源密度热力图、Gini 指数或空间自相关量化学区公平性，二是<strong>遥感影像的应用</strong>，比如用时间序列影像检测新建住宅区与土地利用变化来触发学区边界复核。
+          </p>
+          <p>
+            具体实现专业性的建议操作包括：在管理端提供“影像对比视图”，可以左右滑动比较不同年份的航片；在分析模块中加入空间统计检验（例如 Moran's I 或 Getis-Ord G*）来检测学区内外生源分布的聚集或离散情况；以及提供可复现的决策报告（包括用于评分的量化指标与地图快照），让学区调整的过程具有科学依据与可审计性。这些专题能力正是地理信息科学专业学生的核心竞争力，可以把课堂上学到的空间分析方法直接搬到系统中，形成有说服力的可视化证据链。
+          </p>
+
+          <h3 style="margin-top:12px;">2.5 开发与学习路线（详尽可操作）</h3>
+          <p>
+            <strong>学习路线（技能栈）</strong>：第一阶段（基础编程与前端）掌握 HTML/CSS/JavaScript、一个 JS 框架（如 Vue 或 React）以及前端地图库（Leaflet、Mapbox GL JS 或 OpenLayers）；第二阶段（后端与数据库）掌握 Python（Flask/Django）或 Node.js，学习 PostGIS（PostgreSQL + PostGIS）并熟悉 GeoServer/MapServer 的地图服务发布；第三阶段（空间分析与遥感）学习常用的空间分析库（Shapely、Fiona、Rasterio、GDAL）与遥感处理（ENVI、Google Earth Engine、Orfeo ToolBox 或基于 Python 的遥感处理流程），并熟悉基本的机器学习与深度学习模型（语义分割、目标检测、NLP）；第四阶段（系统集成）学习 Docker 容器化、CI/CD、基本云部署（比如阿里云/腾讯云/或学校服务器）并掌握安全策略与数据加密。
+          </p>
+          <p>
+            <strong>实践路线（阶段化开发）</strong><br>
+            - <em>阶段 0：需求与原型</em>（1-2 周）——制作交互原型（Figma/草图）、绘制数据流程、明确接口与权限。<br>
+            - <em>阶段 1：地图展示与基本查询</em>（2-4 周）——实现地图渲染、学校点位、学区边界展示、地址到学区的反查。<br>
+            - <em>阶段 2：管理端 CRUD 与审批</em>（2-5 周）——实现学区编辑、版本历史、导入/导出、用户权限与审批流程。<br>
+            - <em>阶段 3：基础空间分析</em>（2-4 周）——实现服务区、缓冲、热力图、容量预警与导出报告。<br>
+            - <em>阶段 4：遥感与 AI 模块</em>（3-8 周）——引入影像变化检测、NLP 解析政策文本与 AI 绘图原型（可先用规则+半自动方式）。<br>
+            - <em>阶段 5：优化与上线</em>（2-4 周）——性能调优、并发处理、增加小程序/移动端适配、用户测试与修复 bug。
+          </p>
+
+          <h3 style="margin-top:12px;">2.6 AI 在系统中的扩展（详尽）</h3>
+          <p>
+            AI 的核心价值在于“提高效率+降低人工成本+提供可解释的建议”。除了自动绘制学区边界，AI 还能承担以下工作：
+            <ul>
+              <li><strong>政策文本解析与空间实体映射</strong>：使用 NLP 将政策中的“以 X 路为界、靠近 Y 小区”等语句抽取出实体（道路名、小区名、地标）并在地图中定位相应矢量要素，形成自动初稿。</li>
+              <li><strong>遥感影像的自动化变更检测</strong>：使用语义分割模型（如 U-Net、DeepLab）或目标检测模型（YOLO 系列）检测新建楼盘、拆迁、绿地变化，触发学区边界复核或手动审核任务。</li>
+              <li><strong>生源预测与招生规划支持</strong>：用时间序列模型或回归模型（例如 LSTM、XGBoost）预测未来几年学龄儿童数量分布，为班额配置、临时学区调整或新校选址提供量化依据。</li>
+              <li><strong>智能问答与家长支持</strong>：通过训练问答模型或使用大模型（封装在安全边界内）实现招生政策问答、材料自动检查、预约填表引导等服务。</li>
+              <li><strong>异常检测与风险预警</strong>：自动发现重叠学区、容量突增点或疑似数据异常（如学校位置与行政区不一致），并把这些问题以工单形式推送给管理员。</li>
+              <li><strong>自动报告与公示材料生成</strong>：AI 自动拼接地图快照、统计图表与政策文案，生成用于公示的 PDF 报告或数据包，减少人工撰写工作量。</li>
+            </ul>
+          </p>
+          <p>
+            技术上可以优先采用“规则 + 半自动 AI”策略：先用规则与空间索引做初步匹配，再由 AI 对难点进行补充（例如 NLP 抽取后人工复核）。这样既能快速产出可用系统，也能保证业务可控与可审计。
+          </p>
+
+        </section>
+
+        <!-- Section 3: roadmap and resources -->
+        <section id="roadmap" style="margin-top:18px;">
+          <h2>3. 开发路线图与示例技术栈（便于实践）</h2>
+
+          <div class="card">
+            <strong>示例技术栈</strong>
+            <ul>
+              <li>前端：HTML / CSS / JavaScript + Vue 或 React + Leaflet / Mapbox GL</li>
+              <li>后端：Python (Flask/Django) 或 Node.js (Express)；GeoServer（WMS/WFS）</li>
+              <li>数据库：PostgreSQL + PostGIS；Redis（缓存）</li>
+              <li>遥感处理：GDAL / Rasterio / Google Earth Engine（可选）</li>
+              <li>AI：PyTorch / TensorFlow（语义分割、NLP），spaCy / Hugging Face（文本）</li>
+              <li>部署：Docker、Nginx、CI/CD、云服务器（按学校资源选择）</li>
+            </ul>
+
+            <div class="timeline">
+              <div class="step"><div class="dot"></div><div class="desc"><strong>阶段1（2-4周）</strong>：完成地图展示、学校点位、学区查询功能与基本后端接口。</div></div>
+              <div class="step"><div class="dot"></div><div class="desc"><strong>阶段2（3-6周）</strong>：建立管理端，实现学区编辑、版本控制、审批与导出。</div></div>
+              <div class="step"><div class="dot"></div><div class="desc"><strong>阶段3（4-8周）</strong>：引入基础空间分析模块（服务区、热力图、容量预警）。</div></div>
+              <div class="step"><div class="dot"></div><div class="desc"><strong>阶段4（6-12周）</strong>：加入遥感变更检测与 AI 文本解析，形成自动化建议流程。</div></div>
+            </div>
+          </div>
+
+          <div class="card" style="margin-top:12px;">
+            <strong>示例小型任务清单（可以直接拿来实践）</strong>
+            <ol>
+              <li>搭建 PostGIS 数据库并导入行政区划与学校点位数据。</li>
+              <li>用 Leaflet 实现地址到学区的反查（GeoJSON 查询）。</li>
+              <li>实现学区编辑（前端绘制、多边形保存到 PostGIS）。</li>
+              <li>实现学区版本历史（变更日志 + 回滚 API）。</li>
+              <li>训练简单遥感模型检测新建筑（或用规则结合阈值做样例）。</li>
+            </ol>
+          </div>
+        </section>
+
+        <!-- Footer note -->
+        <footer>
+          若需把该 HTML 转为 PDF 或 PPT（含可编辑地图快照），回复我你偏好的格式与排版（例如 A4、双栏或 PPT 幻灯片尺寸），我会继续输出可直接下载的文件或给出操作步骤。
+        </footer>
+      </article>
+
+      <aside>
+        <div style="font-weight:700; margin-bottom:8px;">快速导航</div>
+        <div class="card">
+          <div><a href="#overview">1. 系统基本想法</a></div>
+          <div style="margin-top:6px"><a href="#questions">2. 产生的问题（详细解答）</a></div>
+          <div style="margin-top:6px"><a href="#roadmap">3. 开发路线图</a></div>
+        </div>
+
+        <div style="margin-top:12px;" class="card">
+          <strong>样例地图预览</strong>
+          <div id="map" class="map-preview"></div>
+          <small style="display:block;margin-top:8px;color:var(--muted)">注：地图需要网络加载 Leaflet 与底图服务（默认使用 OpenStreetMap）。</small>
+        </div>
+
+        <div class="card" style="margin-top:12px;">
+          <strong>快速资源</strong>
+          <ul>
+            <li><a href="https://leafletjs.com" target="_blank">Leaflet</a></li>
+            <li><a href="https://postgis.net" target="_blank">PostGIS</a></li>
+            <li><a href="https://gdal.org" target="_blank">GDAL / Rasterio</a></li>
+            <li><a href="https://huggingface.co" target="_blank">Hugging Face（NLP & 模型）</a></li>
+          </ul>
+        </div>
+
+        <div style="margin-top:12px;" class="card">
+          <strong>联系/下一步</strong>
+          <p style="color:var(--muted);font-size:13px">想要我：<br>• 把该页面导出为 PDF<br>• 生成 PPT 报告大纲并填充内容<br>• 给出数据获取模板（字段与格式）——请选择一项并回复</p>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <!-- Leaflet scripts -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    // map preview initialization (works when internet is available)
+    try {
+      var map = L.map('map').setView([25.0330,121.5654], 12); // Taipei area as placeholder
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap contributors'
+      }).addTo(map);
+      // example school points
+      var schools = [
+        {name:'示例小学 A', lat:25.035, lng:121.565},
+        {name:'示例中学 B', lat:25.045, lng:121.575}
+      ];
+      schools.forEach(s => {
+        L.marker([s.lat, s.lng]).addTo(map).bindPopup('<b>'+s.name+'</b>');
+      });
+      // example district polygon
+      var polygon = L.polygon([[25.038,121.552],[25.043,121.552],[25.046,121.565],[25.036,121.582],[25.032,121.571]], {color:'#0f62fe', weight:2, fillOpacity:0.05}).addTo(map);
+      polygon.bindPopup('示例学区边界');
+    } catch(e){
+      console.warn('Leaflet init failed', e);
+    }
+  </script>
+</body>
+</html>
