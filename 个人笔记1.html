@@ -1,0 +1,90 @@
+<!doctype html>
+
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>情绪自我修复 — 观察 · 记录 · 提醒</title>
+  <style>
+    :root{--bg:#0f1724;--card:#0b1220;--accent:#60a5fa;--muted:#94a3b8;--glass:rgba(255,255,255,0.03)}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial; background:linear-gradient(180deg,#071126 0%, #0a1420 100%);color:#e6eef8}
+    header{padding:20px 18px;display:flex;gap:12px;align-items:center}
+    h1{margin:0;font-size:18px}
+    .container{max-width:980px;margin:12px auto;padding:16px}
+    .grid{display:grid;grid-template-columns:1fr 360px;gap:16px}
+    .card{background:var(--card);border-radius:12px;padding:14px;box-shadow:0 6px 18px rgba(2,6,23,0.6);}
+    .section-title{font-weight:600;color:var(--accent);margin-bottom:8px}
+    textarea{width:100%;min-height:110px;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit}
+    button{background:var(--accent);border:0;padding:8px 12px;border-radius:8px;color:#04263b;font-weight:600;cursor:pointer}
+    .muted{color:var(--muted);font-size:13px}
+    .row{display:flex;gap:8px;align-items:center}
+    .small{font-size:13px;padding:6px 8px;border-radius:8px;background:var(--glass)}
+    .task{display:flex;align-items:center;gap:10px;padding:8px;border-radius:8px;margin-bottom:8px;background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.02))}
+    .done{opacity:0.5;text-decoration:line-through}
+    label.switch{position:relative;display:inline-block;width:44px;height:26px}
+    label.switch input{display:none}
+    label.switch .slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:#263445;border-radius:999px}
+    label.switch .slider:before{content:'';position:absolute;height:20px;width:20px;background:white;left:3px;top:3px;border-radius:50%}.reminder-list{max-height:240px;overflow:auto;margin-top:8px}
+.reminder-item{display:flex;align-items:center;justify-content:space-between;padding:8px;border-radius:8px;margin-bottom:8px;background:rgba(255,255,255,0.02)}
+footer{margin-top:14px;color:var(--muted);font-size:13px;text-align:center}
+@media(max-width:920px){.grid{grid-template-columns:1fr;}.container{padding:10px}}
+
+  </style>
+</head>
+<body>
+  <header>
+    <div style="width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,#0ea5e9,#6366f1);display:flex;align-items:center;justify-content:center;font-weight:700">心</div>
+    <div>
+      <h1>情绪自我修复 — 观察 · 记录 · 提醒</h1>
+      <div class="muted">简洁版网页工具：帮助你觉察情绪、写短日记、设提醒、建立小成功循环</div>
+    </div>
+  </header>  <div class="container">
+    <div class="grid">
+      <div>
+        <div class="card">
+          <div class="section-title">一、当下觉察（写下情绪，3分钟）</div>
+          <div class="muted">在下面写下你现在的感受，写完按“保存觉察”。不要评判，只记录。</div>
+          <textarea id="awareness" placeholder="例如：我感到焦虑，我在用手机来逃避写作业……"></textarea>
+          <div style="margin-top:8px" class="row">
+            <button id="saveAwareness">保存觉察</button>
+            <button id="clearAwareness" class="small">清空</button>
+            <div id="awSaved" class="muted" style="margin-left:auto"></div>
+          </div>
+        </div><div class="card" style="margin-top:12px">
+      <div class="section-title">二、缓冲小习惯（打断自动化逃避）</div>
+      <div class="muted">按下下面任意按钮作为“过渡动作”——它会打断你拿起手机的冲动，给你几秒选择的空间。</div>
+      <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+        <button onclick="bufferAction('深呼吸3次')">深呼吸 3 次</button>
+        <button onclick="bufferAction('倒一杯水')">倒一杯水</button>
+        <button onclick="bufferAction('站起来走两步')">站起来走两步</button>
+        <button onclick="bufferAction('拉伸')">拉伸 30 秒</button>
+      </div>
+      <div id="bufferLog" class="muted" style="margin-top:8px"></div>
+    </div>
+
+    <div class="card" style="margin-top:12px">
+      <div class="section-title">三、5分钟日记（睡前）</div>
+      <div class="muted">每天用 5 分钟记录一条：好事/难受/明天一件小事。</div>
+      <textarea id="diary" placeholder="今天我做得还不错的一件事是...\n今天我最难受的是...\n明天我想试着做的最小一件事是..."></textarea>
+      <div style="margin-top:8px" class="row">
+        <button id="saveDiary">保存日记</button>
+        <button id="exportDiary" class="small">导出为文本</button>
+        <div id="diarySaved" class="muted" style="margin-left:auto"></div>
+      </div>
+      <div id="diaryList" style="margin-top:10px;max-height:220px;overflow:auto"></div>
+    </div>
+
+    <div class="card" style="margin-top:12px">
+      <div class="section-title">四、小成功清单（每天至少完成 1 个）</div>
+      <div class="muted">把能完成的小任务放这里，完成之后打勾。</div>
+      <div style="margin-top:8px" class="row">
+        <input id="taskText" placeholder="例如：整理书桌 5 分钟" style="flex:1;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit" />
+        <button id="addTask">添加</button>
+      </div>
+      <div id="tasks" style="margin-top:10px"></div>
+    </div>
+
+  </div>
+
+ 
